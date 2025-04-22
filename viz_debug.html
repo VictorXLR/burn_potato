@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Potato Debug View</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .chart {
+            margin-bottom: 20px;
+        }
+
+        #rawData {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Potato Debug Monitor</h1>
+    <div id="gameTheory" class="chart"></div>
+    <div id="gpuStats" class="chart"></div>
+    <div id="mandelbrot" class="chart"></div>
+    <h3>Raw Data:</h3>
+    <div id="rawData"></div>
+
+    <script>
+        function fetchData() {
+            fetch('http://localhost:8050/get-data')
+                .then(response => response.json())
+                .then(data => {
+                    // Update raw data view
+                    document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+
+                    // Game Theory Plot
+                    if (data.game_theory) {
+                        const gameTheoryData = [{
+                            x: data.game_theory.rounds,
+                            y: data.game_theory.cooperate,
+                            name: 'Cooperate',
+                            type: 'scatter'
+                        }, {
+                            x: data.game_theory.rounds,
+                            y: data.game_theory.defect,
+                            name: 'Defect',
+                            type: 'scatter'
+                        }, {
+                            x: data.game_theory.rounds,
+                            y: data.game_theory.tit_for_tat,
+                            name: 'Tit for Tat',
+                            type: 'scatter'
+                        }];
+
+                        Plotly.newPlot('gameTheory', gameTheoryData, {
+                            title: 'Game Theory Evolution',
+                            height: 400
+                        });
+                    }
+
+                    // GPU Stats Plot
+                    if (data.gpu_stats) {
+                        const gpuData = [{
+                            y: data.gpu_stats.temperature,
+                            name: 'Temperature',
+                            type: 'line'
+                        }, {
+                            y: data.gpu_stats.utilization,
+                            name: 'Utilization',
+                            type: 'line',
+                            yaxis: 'y2'
+                        }];
+
+                        Plotly.newPlot('gpuStats', gpuData, {
+                            title: 'GPU Stats',
+                            height: 400,
+                            yaxis: { title: 'Temperature (°C)' },
+                            yaxis2: {
+                                title: 'Utilization (%)',
+                                overlaying: 'y',
+                                side: 'right'
+                            }
+                        });
+                    }
+
+                    // Mandelbrot Plot
+                    if (data.mandelbrot) {
+                        const mandelbrotData = [{
+                            z: data.mandelbrot,
+                            type: 'heatmap'
+                        }];
+
+                        Plotly.newPlot('mandelbrot', mandelbrotData, {
+                            title: 'Mandelbrot Set',
+                            height: 600
+                        });
+                    }
+                })
+                .catch(console.error);
+        }
+
+        // Update every second
+        setInterval(fetchData, 1000);
+        fetchData(); // Initial fetch
+    </script>
+</body>
+
+</html>

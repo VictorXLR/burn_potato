@@ -6,8 +6,35 @@ import json
 from datetime import datetime
 import requests
 import threading
+import os
 
 VIZ_SERVER = "http://localhost:8050"
+
+def check_gpu_setup():
+    print("\n=== GPU Environment Diagnostics ===")
+    
+    # Check CUDA_HOME
+    cuda_home = os.environ.get('CUDA_HOME') or os.environ.get('CUDA_PATH')
+    print(f"🔍 CUDA_HOME: {cuda_home}")
+    
+    # Check PyTorch CUDA setup
+    print(f"🔧 PyTorch version: {torch.__version__}")
+    print(f"🔧 CUDA available: {torch.cuda.is_available()}")
+    print(f"🔧 CUDA version: {torch.version.cuda}")
+    
+    if torch.cuda.is_available():
+        print(f"🔧 Current device: {torch.cuda.current_device()}")
+        print(f"🔧 Device name: {torch.cuda.get_device_name()}")
+        print(f"🔧 Device count: {torch.cuda.device_count()}")
+    else:
+        print("\n❌ CUDA is not available. Possible solutions:")
+        print("1. Install CUDA Toolkit matching your PyTorch version")
+        print("2. Add CUDA to your PATH environment variable")
+        print("3. Run: conda install pytorch pytorch-cuda=11.8 -c pytorch -c nvidia")
+        print("4. Verify NVIDIA drivers are installed: nvidia-smi")
+        print("5. Check if your conda environment has pytorch with CUDA support:")
+        print("   conda list torch")
+        sys.exit(1)
 
 def stream_data(data):
     try:
@@ -248,6 +275,9 @@ functions_map = {
 }
 
 if __name__ == "__main__":
+    # Run GPU diagnostics first
+    check_gpu_setup()
+    
     # Start GPU monitoring in background
     monitor_thread = threading.Thread(target=start_gpu_monitor, daemon=True)
     monitor_thread.start()
