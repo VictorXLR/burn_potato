@@ -8,3 +8,4 @@ seaborn==0.13.2
 torch==2.2.1
 flask==3.0.2
 flask-cors==4.0.0
+pynvml==11.5.0

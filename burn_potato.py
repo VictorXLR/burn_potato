@@ -8,6 +8,11 @@ import requests
 import threading
 import os
 
+# Handle potential OpenMP runtime duplicate initialization issues
+# This can occur when multiple libraries link against different OpenMP versions
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
+
 VIZ_SERVER = "http://localhost:8050"
 
 def check_gpu_setup():
@@ -38,9 +43,13 @@ def check_gpu_setup():
 
 def stream_data(data):
     try:
-        requests.post(f"{VIZ_SERVER}/update-data", json=data)
-    except:
-        pass  # Silently fail if visualization server is not running
+        response = requests.post(f"{VIZ_SERVER}/update-data", json=data)
+        if response.status_code != 200:
+            print("Warning: Visualization server returned error. Start viz_potato.py first.")
+    except requests.exceptions.ConnectionError:
+        print("Warning: Could not connect to visualization server. Start viz_potato.py first.")
+    except Exception as e:
+        print(f"Warning: Visualization error: {str(e)}")
 
 def simulate_game_theory():
     print("🔍 Simulating game theory research: Live streaming Prisoner's Dilemma")
@@ -248,20 +257,26 @@ def simple_cnn_forward():
         json.dump(stats, f)
     print(f"CNN inference stats saved to cnn_inference_{timestamp}.json")
 
+def get_gpu_stats():
+    try:
+        import pynvml
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+        util = pynvml.nvmlDeviceGetUtilizationRates(handle).gpu
+        return temp, util
+    except:
+        return 0, 0
+
 def start_gpu_monitor():
     while True:
         if torch.cuda.is_available():
-            # Get GPU stats if available
-            try:
-                temp = torch.cuda.temperature()
-                util = torch.cuda.utilization()
-                stream_data({
-                    'type': 'gpu_stats',
-                    'temperature': temp,
-                    'utilization': util
-                })
-            except:
-                pass
+            temp, util = get_gpu_stats()
+            stream_data({
+                'type': 'gpu_stats',
+                'temperature': temp,
+                'utilization': util
+            })
         time.sleep(1)
 
 functions_map = {

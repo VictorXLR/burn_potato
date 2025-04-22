@@ -18,8 +18,10 @@ class DataManager:
             'defect': deque(maxlen=max_points),
             'tit_for_tat': deque(maxlen=max_points)
         }
-        self.gpu_stats = {'temperature': [], 'utilization': []}
-        self.data_queue = queue.Queue()
+        self.gpu_stats = {
+            'temperature': deque(maxlen=max_points),
+            'utilization': deque(maxlen=max_points)
+        }
 
     def process_data(self, data):
         if data['type'] == 'game_theory':
@@ -33,6 +35,21 @@ class DataManager:
             self.gpu_stats['temperature'].append(data['temperature'])
             self.gpu_stats['utilization'].append(data['utilization'])
 
+    def get_data(self):
+        return {
+            'game_theory': {
+                'rounds': list(self.game_theory_history['rounds']),
+                'cooperate': list(self.game_theory_history['cooperate']),
+                'defect': list(self.game_theory_history['defect']),
+                'tit_for_tat': list(self.game_theory_history['tit_for_tat'])
+            },
+            'mandelbrot': self.mandelbrot_data,
+            'gpu_stats': {
+                'temperature': list(self.gpu_stats['temperature']),
+                'utilization': list(self.gpu_stats['utilization'])
+            }
+        }
+
 data_manager = DataManager()
 
 @app.route('/update-data', methods=['POST'])
@@ -43,26 +60,23 @@ def update_data():
 
 @app.route('/get-data', methods=['GET'])
 def get_data():
-    return jsonify({
-        'game_theory': {
-            'rounds': list(data_manager.game_theory_history['rounds']),
-            'cooperate': list(data_manager.game_theory_history['cooperate']),
-            'defect': list(data_manager.game_theory_history['defect']),
-            'tit_for_tat': list(data_manager.game_theory_history['tit_for_tat'])
-        },
-        'mandelbrot': data_manager.mandelbrot_data,
-        'gpu_stats': data_manager.gpu_stats
-    })
+    return jsonify(data_manager.get_data())
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, 'index.html')
+    try:
+        if path and os.path.exists(app.static_folder + '/' + path):
+            return send_from_directory(app.static_folder, path)
+        elif os.path.exists(app.static_folder + '/index.html'):
+            return send_from_directory(app.static_folder, 'index.html')
+        else:
+            return jsonify({"message": "Visualization UI not found. Data API endpoints are still available."}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
 def start_visualization_server():
-    app.run(port=8050, debug=True)
+    app.run(port=8050, debug=False, host='0.0.0.0')  # Less strict settings
 
 if __name__ == "__main__":
     start_visualization_server()

@@ -1,15 +1,17 @@
 {
   "name": "potato-ui",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.11.3",
+    "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "@mui/material": "^5.15.10",
+    "@mui/material": "^5.13.0",
+    "plotly.js": "^2.24.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-plotly.js": "^2.6.0",
-    "plotly.js": "^2.27.1"
+    "three": "^0.157.0",
+    "@types/three": "^0.157.2"
   },
   "scripts": {
     "start": "vite",
@@ -17,7 +19,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.1.4"
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.3.8"
   }
 }

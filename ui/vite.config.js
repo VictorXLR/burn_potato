@@ -4,11 +4,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
     plugins: [react()],
     server: {
-        port: 3000,
-        proxy: {
-            '/update-data': 'http://localhost:8050',
-            '/get-data': 'http://localhost:8050'
-        }
+        port: 3000
     },
     build: {
         outDir: 'dist'
