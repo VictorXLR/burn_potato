@@ -1,10 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from collections import deque
 import queue
 import threading
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='ui/dist')
 CORS(app)
 
 class DataManager:
@@ -53,8 +54,15 @@ def get_data():
         'gpu_stats': data_manager.gpu_stats
     })
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, 'index.html')
+
 def start_visualization_server():
-    app.run(port=8050)
+    app.run(port=8050, debug=True)
 
 if __name__ == "__main__":
     start_visualization_server()
